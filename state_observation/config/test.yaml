@@ -1,0 +1,6 @@
+state_publisher_node:
+  ros__parameters:
+    odom_topic: /pf/pose/odom
+    drive_topic: /drive
+    lidar_topic: /scan
+    state_obs_topic: /ego_racecar/states
