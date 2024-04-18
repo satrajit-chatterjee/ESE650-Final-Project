@@ -8,11 +8,9 @@ from rclpy.node import Node
 
 import numpy as np
 import tf_transformations as tf
-from geometry_msgs.msg import PointStamped
-from ackermann_msgs.msg import AckermannDriveStamped
 from drifting_interfaces.msg import StateEstimatesStamped
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import LaserScan
+from std_msgs.msg import Float64
 from utilities.params import register_config
 from utilities import se3
 
@@ -24,6 +22,7 @@ class StateObservationConfig():
     lidar_topic: str = '/scan'
     drive_topic: str = '/drive'
     state_obs_topic: str = '/ego_racecar/states'
+    erpm_topic: str = '/commands/motor/speed'
 
     local_frame: str = 'ego_racecar/base_link'
     global_frame: str = 'map'
@@ -35,10 +34,15 @@ class StateObservation(Node):
         self.config = register_config(self, StateObservationConfig())
 
         self.odom_sub = self.create_subscription(Odometry, self.config.odom_topic, self.pose_callback, 10)
-        self.lidar_sub = self.create_subscription(LaserScan, self.config.lidar_topic, self.lidar_callback, 10)
-        self.drive_sub = self.create_subscription(AckermannDriveStamped, self.config.drive_topic, self.drive_callback, 10)
+        self.erpm_sub = self.create_subscription(Float64, self.config.erpm_topic, self.erpm_callback, 10)
 
         self.state_pub = self.create_publisher(StateEstimatesStamped, self.config.state_obs_topic, 10)
+
+        self.erpm = 0.0
+
+    def erpm_callback(self, msg):
+        self.erpm = msg.data
+
 
     def pose_callback(self, msg):
         new_x = msg.pose.pose.position.x
@@ -67,6 +71,7 @@ class StateObservation(Node):
         state_msg.yaw = yaw
         state_msg.slip_angle = slip_angle
         state_msg.angular_vel = angular_velocity
+        state_msg.erpm = self.erpm
         self.state_pub.publish(state_msg)
 
 
