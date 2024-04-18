@@ -4,3 +4,5 @@ state_publisher_node:
     drive_topic: /drive
     lidar_topic: /scan
     state_obs_topic: /ego_racecar/states
+    local_frame: ego_racecar/base_link
+    global_frame: map

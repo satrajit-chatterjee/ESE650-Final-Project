@@ -10,6 +10,7 @@ import numpy as np
 import tf_transformations as tf
 from geometry_msgs.msg import PointStamped
 from ackermann_msgs.msg import AckermannDriveStamped
+from drifting_interfaces.msg import StateEstimatesStamped
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 from utilities.params import register_config
@@ -24,6 +25,9 @@ class StateObservationConfig():
     drive_topic: str = '/drive'
     state_obs_topic: str = '/ego_racecar/states'
 
+    local_frame: str = 'ego_racecar/base_link'
+    global_frame: str = 'map'
+
 class StateObservation(Node):
     def __init__(self):
         super().__init__('state_publisher_node')
@@ -34,67 +38,36 @@ class StateObservation(Node):
         self.lidar_sub = self.create_subscription(LaserScan, self.config.lidar_topic, self.lidar_callback, 10)
         self.drive_sub = self.create_subscription(AckermannDriveStamped, self.config.drive_topic, self.drive_callback, 10)
 
-        self.state_pub = self.create_publisher(PointStamped, self.config.state_obs_topic, 10)
-
-        self.prev_time = self.get_clock().now()
-
-        self.current_pose = [0, 0]
-
-        self.desired_heading = 0
-        self.commanded_speed = 0
-        self.steer_angle = 0
-        self.past_steer_angle = 0
-        self.angular_velocity = 0
-
-    def lidar_callback(self, msg):
-        # Get the angle of the furthest point from the lidar scan
-        max_index = np.argmax(msg.ranges)
-        max_angle = msg.angle_min + max_index * msg.angle_increment
-
-        # Get heading of the robot
-        self.desired_heading = max_angle
-        
-    def drive_callback(self, msg):
-        # Get the steering angle from the ackermann drive message
-        self.past_steer_angle = self.steer_angle
-        self.steer_angle = msg.drive.steering_angle
-        current_time = self.get_clock().now()
-        dt = (current_time - self.prev_time).nanoseconds / 1e9
-        self.angular_velocity = (self.steer_angle - self.past_steer_angle) / dt
-        self.prev_time = current_time
-        
-        self.commanded_speed = msg.drive.speed
+        self.state_pub = self.create_publisher(StateEstimatesStamped, self.config.state_obs_topic, 10)
 
     def pose_callback(self, msg):
         new_x = msg.pose.pose.position.x
         new_y = msg.pose.pose.position.y
+        yaw = tf.euler_from_quaternion([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])[2]
 
-        velocity = msg.twist.twist.linear.x
+        v_map = msg.twist.twist.linear.x
 
-        # TODO: (satrajic) Implement filtering for odometry data
-        covariances = msg.pose.covariance
+        v_x_map, v_y_map = v_map * np.cos(yaw), v_map * np.sin(yaw)
 
-        base_T_map = se3.inverse(se3.from_msg(msg.pose.pose))
-        R_base_map = base_T_map[:3, :3]
-        _, _, base_orientation = tf.euler_from_matrix(R_base_map)
-
-        # velocity along x-axis
-        x_vel = velocity * np.cos(self.desired_heading)
-
-        # velocity along y-axis
-        y_vel = velocity * np.sin(self.desired_heading)
+        # Find velocity in local frame
+        R_map2car = np.array([[np.cos(yaw), -np.sin(yaw)], [np.sin(yaw), np.cos(yaw)]])
+        v_x_car, v_y_car = np.dot(R_map2car, np.array([v_x_map, v_y_map]))
         
-        slip_angle = np.arctan2(y_vel, x_vel)
+        slip_angle = np.arctan2(v_y_car, v_x_car)
+        angular_velocity = msg.twist.twist.angular.z
 
-        # update current pose
-        self.current_pose = [new_x, new_y]
-
-        # print velocity along x-axis, y-axis and slip angle
-        print(f'Desired heading: {self.desired_heading}, pred_velocity: {velocity:.2f}, x_vel: {x_vel:.2f}, y_vel: {y_vel:.2f}, slip_angle: {np.degrees(slip_angle):.2f}, yaw_rate: {self.angular_velocity:.2f}')
-    
-        # write velocity, x_vel, y_vel, slip angle, and actual velocity to csv file
-        with open(ROOT + '/src/state_observation/state_observation.csv', 'a') as f:
-            f.write(f'{velocity},{x_vel},{y_vel},{slip_angle},{self.commanded_speed}\n')
+        # Publish the state estimates
+        state_msg = StateEstimatesStamped()
+        state_msg.header.stamp = self.get_clock().now().to_msg()
+        state_msg.header.frame_id = 'map'
+        state_msg.x = new_x
+        state_msg.y = new_y
+        state_msg.vel_x = v_x_car
+        state_msg.vel_y = v_y_car
+        state_msg.yaw = yaw
+        state_msg.slip_angle = slip_angle
+        state_msg.angular_vel = angular_velocity
+        self.state_pub.publish(state_msg)
 
 
 def main(args=None):
