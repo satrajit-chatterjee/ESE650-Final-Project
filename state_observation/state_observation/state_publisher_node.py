@@ -84,13 +84,13 @@ class StateObservation(Node):
         # velocity along y-axis
         y_vel = velocity * np.sin(self.desired_heading)
         
-        slip_angle = np.arctan2(y_vel, x_vel)
+        slip_angle = np.arctan2(y_vel, x_vel)  # same as desired heading, no need to calc
 
         # update current pose
         self.current_pose = [new_x, new_y]
 
         # print velocity along x-axis, y-axis and slip angle
-        print(f'Desired heading: {self.desired_heading}, pred_velocity: {velocity:.2f}, x_vel: {x_vel:.2f}, y_vel: {y_vel:.2f}, slip_angle: {np.degrees(slip_angle):.2f}, yaw_rate: {self.angular_velocity:.2f}')
+        print(f'Desired heading: {np.degrees(self.desired_heading):.2f}, pred_velocity: {velocity:.2f}, x_vel: {x_vel:.2f}, y_vel: {y_vel:.2f}, slip_angle: {np.degrees(slip_angle):.2f}, yaw_rate: {self.angular_velocity:.2f}')
     
         # write velocity, x_vel, y_vel, slip angle, and actual velocity to csv file
         with open(ROOT + '/src/state_observation/state_observation.csv', 'a') as f:
