@@ -1,0 +1,218 @@
+{
+  "configById": {
+    "Plot!2j382cq": {
+      "paths": [
+        {
+          "value": "/ego_racecar/states.vel_x",
+          "enabled": true,
+          "timestampMethod": "receiveTime"
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/ego_racecar/states.x",
+          "enabled": true
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/pf/pose/odom.pose.pose.position.x",
+          "enabled": true
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": false,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240
+    },
+    "Plot!25wey3y": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/ego_racecar/states.vel_y",
+          "enabled": true
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/ego_racecar/states.y",
+          "enabled": true
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/pf/pose/odom.pose.pose.position.y",
+          "enabled": true
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": false,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240
+    },
+    "Plot!4c2g8ta": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/ego_racecar/states.yaw",
+          "enabled": true
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/pf/pose/odom.pose.pose.orientation.z",
+          "enabled": true
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240
+    },
+    "Plot!2vk2tmj": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/imu.imu.linear_acceleration.y",
+          "enabled": true
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/imu.imu.linear_acceleration.x",
+          "enabled": true
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/imu.imu.linear_acceleration.z",
+          "enabled": true
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240
+    },
+    "RawMessages!os6rgs": {
+      "diffEnabled": false,
+      "diffMethod": "previous message",
+      "diffTopicPath": "",
+      "showFullMessageForDiff": false,
+      "topicPath": "/ego_racecar/states",
+      "expansion": {
+        "header": "e",
+        "stamp~header": "e",
+        "pose": "e",
+        "pose~pose": "e",
+        "position~pose~pose": "e",
+        "orientation~pose~pose": "e",
+        "twist": "e",
+        "twist~twist": "e",
+        "linear~twist~twist": "e",
+        "angular~twist~twist": "e"
+      }
+    },
+    "Plot!2391akt": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/ego_racecar/states.slip_angle",
+          "enabled": true
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240
+    },
+    "Plot!tw2y2n": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/pf/pose/odom.twist.twist.linear.x",
+          "enabled": true
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240
+    },
+    "Plot!4d0yrld": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/commands/motor/speed.data",
+          "enabled": true
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240
+    }
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": {
+    "speed": 1
+  },
+  "layout": {
+    "direction": "row",
+    "first": {
+      "first": "Plot!2j382cq",
+      "second": {
+        "first": "Plot!25wey3y",
+        "second": {
+          "first": "Plot!4c2g8ta",
+          "second": "Plot!2vk2tmj",
+          "direction": "column",
+          "splitPercentage": 34.3002303210947
+        },
+        "direction": "column",
+        "splitPercentage": 21.723730814639904
+      },
+      "direction": "column",
+      "splitPercentage": 11.770833333333334
+    },
+    "second": {
+      "first": {
+        "first": {
+          "first": "RawMessages!os6rgs",
+          "second": "Plot!2391akt",
+          "direction": "column",
+          "splitPercentage": 56.26822157434405
+        },
+        "second": "Plot!tw2y2n",
+        "direction": "column",
+        "splitPercentage": 80.78034682080924
+      },
+      "second": "Plot!4d0yrld",
+      "direction": "column",
+      "splitPercentage": 72.08333333333333
+    },
+    "splitPercentage": 67.235926628716
+  }
+}
