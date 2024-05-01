@@ -155,7 +155,7 @@ class ControllerNode(Node):
         """
         inputs, outputs, bindings, stream = common.allocate_buffers(self.engine)
         inputs[0].host = state
-        [output] = common.do_inference_v2(self.context, bindings=bindings, inputs=inputs, outputs=outputs, stream=stream)
+        output = common.do_inference_v2(self.context, bindings=bindings, inputs=inputs, outputs=outputs, stream=stream)
         return output
 
     
