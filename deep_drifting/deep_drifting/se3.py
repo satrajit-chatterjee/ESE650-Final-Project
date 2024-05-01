@@ -56,10 +56,13 @@ def transform_points(T: np.ndarray, points: np.ndarray) -> np.ndarray:
     np.ndarray
         the transformed points with equivalent dimensions to `points`
     """
+    if points.ndim == 1:
+        points = points[None]
+
     N, D = points.shape
     if D == 2:
         points = np.column_stack((points, np.zeros(N), np.ones(N)))
     elif D == 3:
         points = np.column_stack((points, np.ones(N)))
 
-    return (points @ T.T)[:, :D]
+    return (points @ T.T)[:, :D].squeeze()
