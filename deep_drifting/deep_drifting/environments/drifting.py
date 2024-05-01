@@ -46,7 +46,7 @@ class DeepDriftingEnv(gym.Wrapper):
         super().__init__(env)
 
         if env.render_mode is not None:
-            env.unwrapped.add_render_callback(env.unwrapped.track.raceline.render_waypoints)
+            env.unwrapped.add_render_callback(env.unwrapped.track.centerline.render_waypoints)
             env.unwrapped.add_render_callback(self.render_distance_to_path)
             env.unwrapped.add_render_callback(self.render_local_waypoints)
             env.unwrapped.add_render_callback(self.render_velocities)
@@ -65,8 +65,8 @@ class DeepDriftingEnv(gym.Wrapper):
         obs_high[[0, 1]] = 1.0
         self.observation_space = gym.spaces.Box(low=obs_low, high=obs_high)
 
-        xs = self.env.unwrapped.track.raceline.xs
-        ys = self.env.unwrapped.track.raceline.ys
+        xs = self.env.unwrapped.track.centerline.xs
+        ys = self.env.unwrapped.track.centerline.ys
         self.waypoints = np.column_stack([xs, ys])
 
         self.max_dist_from_path = 5.0
@@ -171,30 +171,28 @@ if __name__ == "__main__":
             "num_agents": 1,
             "observation_config": {
                 "type": "dynamic_state"
-            }
+            },
+            "params": {
+                "mu": 0.4
+            },
+            "map": "Spielberg",
          },
          render_mode="human"
     )
     print(env)
     env = DeepDriftingEnv(env)
+    print(env.unwrapped.config["params"])
 
     print(env.action_space)
     print(env.observation_space)
-
-    # action = env.action_space.sample()
-    # env.reset()
-    # # print(orthogonal_distance_to_line(
-    # #     np.array([0.26, 1.31]),
-    # #     np.array([2, 3]),
-    # #     np.array([2.94, 1.08])
-    # # ))
 
     obs, info = env.reset()
     print(obs)
     env.render()
     done = False
-    while True:
+    while not done:
         action = env.action_space.sample()
         # action = np.array([0.0, 0.0])
         obs, step_reward, done, truncated, info = env.step(action)
+        print(obs, step_reward)
         frame = env.render()

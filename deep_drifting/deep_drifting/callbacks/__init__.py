@@ -1,1 +1,1 @@
-from callbacks import *
+from deep_drifting.callbacks.callbacks import *
