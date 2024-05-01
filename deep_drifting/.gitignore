@@ -4,3 +4,6 @@
 # Local Development
 f1tenth_gym
 
+# Python
+__pycache__
+*.egg-info/

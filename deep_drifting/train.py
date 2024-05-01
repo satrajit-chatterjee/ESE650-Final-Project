@@ -2,8 +2,22 @@ import gymnasium as gym
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.callbacks import EvalCallback
 
 from f1tenth_gym.envs import F110Env
+
+def wrap_env():
+    env : F110Env = gym.make(
+        "f1tenth_gym:f1tenth-v0",
+         config = {
+            "num_agents": 1,
+            # "observation_config": {
+            #     "type": "dynamic_state"
+            # },
+         },
+    )
+
+    return env
 
 if __name__ == "__main__":
     # env : F110Env = gym.make(
@@ -17,7 +31,7 @@ if __name__ == "__main__":
     # )
 
     # TODO(rahul): make params configurable
-    vec_env = make_vec_env(F110Env, n_envs=1, seed=42)
+    vec_env = make_vec_env(wrap_env, n_envs=1, seed=42)
     model = PPO(
         "MultiInputPolicy",
         vec_env,
@@ -28,4 +42,10 @@ if __name__ == "__main__":
         device="cuda"
     )
 
-    model.learn(total_timesteps=10000)
+    # eval_callback = EvalCallback(
+    #     vec_env, best_model_save_path="./logs/",
+    #     log_path="./logs/", eval_freq=5000,
+    #     deterministic=True, render=True
+    # )
+
+    model.learn(total_timesteps=10000, progress_bar=True)

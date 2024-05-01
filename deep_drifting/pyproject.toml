@@ -1,0 +1,6 @@
+[project]
+name = "deep_drifting"
+version = "0.0.1"
+
+[tool.setuptools]
+packages = ["deep_drifting"]
