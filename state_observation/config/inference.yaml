@@ -1,0 +1,10 @@
+controller_node:
+  ros__parameters:
+    drive_topic: /drive
+    state_obs_topic: /ego_racecar/states
+    local_frame: ego_racecar/base_link
+    global_frame: map
+    v_max: 10.0
+    max_dist_from_path: 5.0
+    
+    
