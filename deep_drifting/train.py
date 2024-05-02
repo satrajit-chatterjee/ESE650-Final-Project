@@ -58,15 +58,23 @@ if __name__ == "__main__":
         **asdict(env_config),
     }
 
+    resume = None
+    if args.id is not None and Path(f"runs/{args.id}").is_dir():
+        resume = "allow"
+
     run = wandb.init(
         project="sb3_new",
         config=config,
         sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
         id=args.id,
+        resume=resume
     )
 
     if args.env_config is not None:
         wandb.save(args.env_config, policy="now")
+
+    if args.timesteps is not None:
+        model_config.timesteps = args.timesteps
 
     train_env = make_vec_env(wrap_env, n_envs=args.num_envs, seed=42, env_kwargs={"env_config": env_config})
     if Path(f"models/{run.id}").is_dir():
