@@ -18,7 +18,7 @@ from deep_drifting.schedulers import linear_schedule
 
 from f1tenth_gym.envs import F110Env
 
-def eval_wrap_env(env_config: EnvConfig, render_mode: Optional[str] = None):
+def eval_wrap_env(env_config: EnvConfig, render_mode: Optional[str] = None, max_episode_steps: Optional[int] = 50000):
     env : F110Env = gym.make(
         "f1tenth_gym:f1tenth-v0",
          config = {
@@ -34,10 +34,10 @@ def eval_wrap_env(env_config: EnvConfig, render_mode: Optional[str] = None):
             },
             "map": env_config.map
          },
-         render_mode=render_mode
+         render_mode=render_mode,
+         max_episode_steps=max_episode_steps
     )
     env = DeepDriftingEnv(env, **asdict(env_config))
-    env = TimeLimit(env, max_episode_steps=50000)
     return env
 
 if __name__ == "__main__":
@@ -69,8 +69,8 @@ if __name__ == "__main__":
         wandb.save(args.env_config, policy="now")
 
     train_env = make_vec_env(wrap_env, n_envs=args.num_envs, seed=42, env_kwargs={"env_config": env_config})
-    if Path(f"models/{run.id}").exists():
-        model = PPO.load(f"models/{run.id}", tensorboard_log=f"runs/{run.id}", device=model_config.device)
+    if Path(f"models/{run.id}").is_dir():
+        model = PPO.load(f"models/{run.id}/best_model.zip", tensorboard_log=f"runs/{run.id}", device=model_config.device)
         model.set_env(train_env)
     else:
         model = PPO(

@@ -1,5 +1,8 @@
 from typing import List, Optional
 from dataclasses import dataclass, field
+from f1tenth_gym.envs.track import Track
+
+import numpy as np
 
 import yaml
 
@@ -13,7 +16,15 @@ class EnvConfig():
     max_dist_from_path: float = 5.0
 
     mu: float = 0.4
-    map: str = "Spielberg"
+    map: Optional[str] = "Spielberg"
+    refline: Optional[str] = None
+
+    def __post_init__(self):
+        if self.refline is not None:
+            refline = np.loadtxt(self.refline, delimiter=",")
+            if refline.shape[1] == 2:
+                refline = np.column_stack([refline, np.ones(refline.shape[0])])
+        self.map = Track.from_refline(*refline.T)
 
 @dataclass
 class ModelConfig():

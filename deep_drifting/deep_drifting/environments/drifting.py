@@ -4,7 +4,6 @@ from typing import Optional
 import gymnasium as gym
 import numpy as np
 from scipy.spatial.transform import Rotation
-from stable_baselines3.common.monitor import Monitor
 
 from deep_drifting import se3
 from deep_drifting.config import EnvConfig
