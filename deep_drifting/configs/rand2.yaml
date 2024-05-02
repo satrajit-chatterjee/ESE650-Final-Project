@@ -1,0 +1,10 @@
+    l_path: 0.4
+    l_drift: 0.6
+    l_vx: 0.0
+    l_vy: 0.4
+    skip: 10
+    max_dist_from_path: 3.0
+
+    mu: 0.76
+    map: null
+    refline: trajectories/rand2.csv
