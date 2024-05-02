@@ -12,3 +12,5 @@ __pycache__
 runs/
 wandb/
 models/
+logs/
+saved_models/
