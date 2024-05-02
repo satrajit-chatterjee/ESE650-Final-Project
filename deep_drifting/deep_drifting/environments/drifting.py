@@ -69,6 +69,7 @@ class DeepDriftingEnv(gym.Wrapper):
             env.unwrapped.add_render_callback(self.render_distance_to_path)
             env.unwrapped.add_render_callback(self.render_next_waypoints)
             env.unwrapped.add_render_callback(self.render_velocities)
+            env.unwrapped.add_render_callback(self.render_positions)
 
         self.action_space = gym.spaces.Box(
             low = -1.0, high = 1.0,
@@ -92,6 +93,8 @@ class DeepDriftingEnv(gym.Wrapper):
         self.signed_distance_to_path: float = 0
         self.current_waypoint: int = 0
         self.next_waypoints: np.ndarray = np.arange(0, 5 * self.skip, self.skip)
+
+        self.positions = [np.zeros(2)]
 
     def step(self, normalized_action: np.ndarray):
 
@@ -160,7 +163,7 @@ class DeepDriftingEnv(gym.Wrapper):
         if current_position is not None and yaw is not None:
             R = Rotation.from_euler("Z", yaw).as_matrix()
             t = np.pad(current_position, (0, 1))
-            self.previous_T = self.T
+            self.positions.append(current_position)
             self.T = se3.from_rotation_translation(R, t)
         return se3.transform_points(se3.inverse(self.T), self.waypoints)
 
@@ -172,6 +175,7 @@ class DeepDriftingEnv(gym.Wrapper):
         self.signed_distance_to_path: float = 0
         self.current_waypoint: int = 0
         self.next_waypoints: np.ndarray = np.arange(0, 5 * self.skip, self.skip)
+        self.positions = []
 
         action = np.array([0, -0.6])
         obs, _, _, _, info = self.step(action)
@@ -190,7 +194,7 @@ class DeepDriftingEnv(gym.Wrapper):
         vx = se3.transform_points(self.T, np.array([self.vx, 0, 0, 0]))[:2]
         vy = se3.transform_points(self.T, np.array([0, self.vy, 0, 0]))[:2]
         renderer.render_lines(np.vstack([current_position, current_position + vx]), color=(255, 0, 0))
-        renderer.render_lines(np.vstack([current_position, current_position + vy]), color=(0, 255, 0))
+        renderer.render_lines(np.vstack([current_position, current_position + vy]), color=(0, 100, 200))
 
     def render_distance_to_path(self, renderer: EnvRenderer):
         previous_waypoint = self.waypoints[self.current_waypoint - 1]
@@ -201,7 +205,11 @@ class DeepDriftingEnv(gym.Wrapper):
         renderer.render_lines(np.vstack([current_position, current_position - n * self.signed_distance_to_path]), color=(0, 255, 0))
 
     def render_next_waypoints(self, renderer: EnvRenderer):
-        renderer.render_closed_lines(self.waypoints[self.next_waypoints], color=(255, 0, 0), size=2)
+        renderer.render_lines(self.waypoints[self.next_waypoints], color=(255, 0, 0), size=2)
+
+    def render_positions(self, renderer: EnvRenderer):
+        if len(self.positions) == 1: return
+        renderer.render_lines(np.asarray(self.positions), color=(200, 100, 0))
 
 def wrap_env(env_config: EnvConfig, render_mode: Optional[str] = None):
     env : F110Env = gym.make(
@@ -222,7 +230,6 @@ def wrap_env(env_config: EnvConfig, render_mode: Optional[str] = None):
          render_mode=render_mode
     )
     env = DeepDriftingEnv(env, **asdict(env_config))
-    env = Monitor(env)
     return env
 
 if __name__ == "__main__":
