@@ -2,12 +2,11 @@ import gymnasium as gym
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.callbacks import EvalCallback
+from stable_baselines3.common.callbacks import EvalCallback, CallbackList
 from stable_baselines3.common.monitor import Monitor
 
 from deep_drifting.environments.drifting import DeepDriftingEnv
 from deep_drifting.schedulers import linear_schedule
-from deep_drifting.callbacks import SaveOnBestTrainingRewardCallback
 from deep_drifting.config import load_env_config, load_model_config, EnvConfig
 from dataclasses import asdict
 
@@ -43,14 +42,14 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("-m", "--model-config", type=str)
     parser.add_argument("-e", "--env-config", type=str)
+    parser.add_argument("-t", "--timesteps", type=int)
+    parser.add_argument("-i", "--id", type=str)
     args = parser.parse_args()
 
     model_config = load_model_config(args.model_config)
     env_config = load_env_config(args.env_config)
 
     config = {
-        "policy_type": "MlpPolicy",
-        "total_timesteps": 1000000,
         "env_name": "DeepDrifting",
         **asdict(model_config),
         **asdict(env_config)
@@ -62,8 +61,8 @@ if __name__ == "__main__":
         config=config,
         sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
     )
-    # TODO(rahul): make params configurable
-    vec_env = make_vec_env(wrap_env, n_envs=6, seed=42)
+
+    vec_env = make_vec_env(wrap_env, n_envs=6, seed=42, env_kwargs={"env_config": env_config})
     model = PPO(
         model_config.policy,
         vec_env,
@@ -76,21 +75,20 @@ if __name__ == "__main__":
             "net_arch": model_config.net_arch
         },
         device=model_config.device,
-        tensorboard_log=f"runs/{run.id}"
+        # tensorboard_log=f"runs/{run.id}"
     )
 
-    # eval_callback = EvalCallback(
-    #     vec_env, best_model_save_path="./logs/",
-    #     log_path="./logs/", eval_freq=5000,
-    #     deterministic=True, render=True
-    # )
+    eval_callback = EvalCallback(
+        vec_env, best_model_save_path=f"models/{run.id}",
+        log_path="./logs/", eval_freq=10000,
+        deterministic=True, render=False
+    )
 
     model.learn(
-        total_timesteps=config["total_timesteps"],
+        total_timesteps=model_config.timesteps,
         progress_bar=True,
-        callback=WandbCallback(
-            model_save_freq=5000,
-            model_save_path=f"models/{run.id}",
-            verbose=2,
-        )
+        callback=CallbackList([
+            eval_callback,
+            WandbCallback(verbose=2)
+        ])
     )
