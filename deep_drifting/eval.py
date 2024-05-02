@@ -12,6 +12,7 @@ def wrap_env():
     env : F110Env = gym.make(
         "f1tenth_gym:f1tenth-v0",
          config = {
+            "seed": 34,
             "num_agents": 1,
             "observation_config": {
                 "type": "dynamic_state"
@@ -20,7 +21,7 @@ def wrap_env():
                 "mu": 0.4
             },
             "reset_config": {
-                "type": "cl_grid_static"
+                "type": "cl_grid_random"
             },
             "map": "Hockenheim",
          },
@@ -46,4 +47,5 @@ if __name__ == "__main__":
     while not done:
         action, _ = model.predict(obs)
         obs, reward, done, truncated, info = eval_env.step(action)
+        print(reward)
         frame = eval_env.render()

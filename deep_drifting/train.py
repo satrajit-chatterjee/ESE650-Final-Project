@@ -26,7 +26,7 @@ def wrap_env():
                 "mu": 0.4
             },
             "reset_config": {
-                "type": "cl_grid_static"
+                "type": "cl_grid_random"
             },
             "map": "Hockenheim",
          },
@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     config = {
         "policy_type": "MlpPolicy",
-        "total_timesteps": 3000000,
+        "total_timesteps": 1000000,
         "env_name": "DeepDrifting"
     }
 
