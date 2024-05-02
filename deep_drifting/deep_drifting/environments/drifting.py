@@ -1,12 +1,15 @@
+from dataclasses import asdict
 from typing import Optional
+
 import gymnasium as gym
 import numpy as np
+from scipy.spatial.transform import Rotation
+from stable_baselines3.common.monitor import Monitor
 
+from deep_drifting import se3
+from deep_drifting.config import EnvConfig
 from f1tenth_gym.envs import F110Env
 from f1tenth_gym.envs.rendering import EnvRenderer
-
-from scipy.spatial.transform import Rotation
-from deep_drifting import se3
 
 def signed_orthogonal_distance_to_line(
     l1: np.ndarray,
@@ -200,6 +203,27 @@ class DeepDriftingEnv(gym.Wrapper):
     def render_next_waypoints(self, renderer: EnvRenderer):
         renderer.render_closed_lines(self.waypoints[self.next_waypoints], color=(255, 0, 0), size=2)
 
+def wrap_env(env_config: EnvConfig, render_mode: Optional[str] = None):
+    env : F110Env = gym.make(
+        "f1tenth_gym:f1tenth-v0",
+         config = {
+            "num_agents": 1,
+            "observation_config": {
+                "type": "dynamic_state"
+            },
+            "params": {
+                "mu": env_config.mu
+            },
+            "reset_config": {
+                "type": "cl_grid_static"
+            },
+            "map": env_config.map
+         },
+         render_mode=render_mode
+    )
+    env = DeepDriftingEnv(env, **asdict(env_config))
+    env = Monitor(env)
+    return env
 
 if __name__ == "__main__":
     env : F110Env = gym.make(

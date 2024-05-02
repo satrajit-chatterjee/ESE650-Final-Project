@@ -1,42 +1,16 @@
-import gymnasium as gym
-
-from stable_baselines3 import PPO
-from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.callbacks import EvalCallback, CallbackList
-from stable_baselines3.common.monitor import Monitor
-
-from deep_drifting.environments.drifting import DeepDriftingEnv
-from deep_drifting.schedulers import linear_schedule
-from deep_drifting.config import load_env_config, load_model_config, EnvConfig
+from argparse import ArgumentParser
 from dataclasses import asdict
 
-import wandb
+import gymnasium as gym
+from stable_baselines3 import PPO
+from stable_baselines3.common.callbacks import CallbackList, EvalCallback
+from stable_baselines3.common.env_util import make_vec_env
 from wandb.integration.sb3 import WandbCallback
 
-from f1tenth_gym.envs import F110Env
-
-from argparse import ArgumentParser
-
-def wrap_env(env_config: EnvConfig):
-    env : F110Env = gym.make(
-        "f1tenth_gym:f1tenth-v0",
-         config = {
-            "num_agents": 1,
-            "observation_config": {
-                "type": "dynamic_state"
-            },
-            "params": {
-                "mu": env_config.mu
-            },
-            "reset_config": {
-                "type": "cl_grid_static"
-            },
-            "map": env_config.map
-         },
-    )
-    env = DeepDriftingEnv(env, **asdict(env_config))
-    env = Monitor(env)
-    return env
+import wandb
+from deep_drifting.config import load_env_config, load_model_config
+from deep_drifting.environments.drifting import wrap_env
+from deep_drifting.schedulers import linear_schedule
 
 if __name__ == "__main__":
     parser = ArgumentParser()
@@ -52,15 +26,18 @@ if __name__ == "__main__":
     config = {
         "env_name": "DeepDrifting",
         **asdict(model_config),
-        **asdict(env_config)
-        
+        **asdict(env_config),
     }
 
     run = wandb.init(
-        project="sb3",
+        project="sb3_new",
         config=config,
         sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
+        id=args.id,
     )
+
+    if args.env_config is not None:
+        wandb.save(args.env_config)
 
     vec_env = make_vec_env(wrap_env, n_envs=6, seed=42, env_kwargs={"env_config": env_config})
     model = PPO(
@@ -75,7 +52,7 @@ if __name__ == "__main__":
             "net_arch": model_config.net_arch
         },
         device=model_config.device,
-        # tensorboard_log=f"runs/{run.id}"
+        tensorboard_log=f"runs/{run.id}"
     )
 
     eval_callback = EvalCallback(
