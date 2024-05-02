@@ -25,6 +25,9 @@ def wrap_env():
             "params": {
                 "mu": 0.4
             },
+            "reset_config": {
+                "type": "cl_grid_static"
+            },
             "map": "Hockenheim",
          },
     )
@@ -36,7 +39,7 @@ if __name__ == "__main__":
 
     config = {
         "policy_type": "MlpPolicy",
-        "total_timesteps": 1000000,
+        "total_timesteps": 3000000,
         "env_name": "DeepDrifting"
     }
 
@@ -46,7 +49,7 @@ if __name__ == "__main__":
         sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
     )
     # TODO(rahul): make params configurable
-    vec_env = make_vec_env(wrap_env, n_envs=3, seed=42)
+    vec_env = make_vec_env(wrap_env, n_envs=6, seed=42)
     model = PPO(
         config["policy_type"],
         vec_env,
@@ -68,7 +71,7 @@ if __name__ == "__main__":
         total_timesteps=config["total_timesteps"],
         progress_bar=True,
         callback=WandbCallback(
-            gradient_save_freq=100,
+            model_save_freq=5000,
             model_save_path=f"models/{run.id}",
             verbose=2,
         )

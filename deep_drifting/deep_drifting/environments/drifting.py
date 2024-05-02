@@ -1,3 +1,4 @@
+from typing import Optional
 import gymnasium as gym
 import numpy as np
 
@@ -48,7 +49,7 @@ class DeepDriftingEnv(gym.Wrapper):
         if env.render_mode is not None:
             env.unwrapped.add_render_callback(env.unwrapped.track.centerline.render_waypoints)
             env.unwrapped.add_render_callback(self.render_distance_to_path)
-            env.unwrapped.add_render_callback(self.render_local_waypoints)
+            env.unwrapped.add_render_callback(self.render_next_waypoints)
             env.unwrapped.add_render_callback(self.render_velocities)
 
         self.action_space = gym.spaces.Box(
@@ -68,13 +69,14 @@ class DeepDriftingEnv(gym.Wrapper):
         xs = self.env.unwrapped.track.centerline.xs
         ys = self.env.unwrapped.track.centerline.ys
         self.waypoints = np.column_stack([xs, ys])
+        self.skip = 5
 
         self.max_dist_from_path = 5.0
         
         self.T = np.eye(4)
-        self.distance_to_path = 0
-        self.current_waypoint = None
-        self.next_waypoints = None
+        self.signed_distance_to_path: float = 0
+        self.current_waypoint: int = 0
+        self.next_waypoints: np.ndarray = np.arange(0, 5 * self.skip, self.skip)
 
     def step(self, normalized_action: np.ndarray):
 
@@ -101,7 +103,15 @@ class DeepDriftingEnv(gym.Wrapper):
         self.vx = vx
         self.vy = vy
 
-        self.compute_local_waypoints(current_position, yaw)
+        self.next_waypoints = np.mod(np.arange(self.current_waypoint, self.current_waypoint + 5 * self.skip, self.skip, dtype=int), self.waypoints.shape[0])
+        relative_waypoints = self.compute_relative_waypoints(current_position, yaw)
+        waypoint_distances = np.linalg.norm(relative_waypoints[[self.current_waypoint - 1, self.next_waypoints[0]]], axis=1)
+        # print(waypoint_distances)
+        self.signed_distance_to_path = signed_orthogonal_distance_to_line(
+            relative_waypoints[self.current_waypoint - 1],
+            relative_waypoints[self.current_waypoint],
+            np.zeros(2)
+        )
         normalized_obs = np.array([
             vx / self.env.unwrapped.params["v_max"],
             vy / self.env.unwrapped.params["v_max"],
@@ -109,41 +119,45 @@ class DeepDriftingEnv(gym.Wrapper):
             beta,
             np.abs(self.signed_distance_to_path) / self.max_dist_from_path
         ])
-        normalized_obs = np.concatenate([normalized_obs, self.next_waypoints.flatten()])
+        normalized_obs = np.concatenate([normalized_obs, relative_waypoints[self.next_waypoints].flatten()])
 
         if (np.abs(self.signed_distance_to_path) > self.max_dist_from_path):
             done = True
 
-        r_path = np.exp(-3 * np.square(normalized_obs[4]))
-        r_drift = 1 / (1 + np.power(np.abs((np.abs(beta) - 0.87) / 0.26), 3))
+        # TODO(rahul): project onto waypoint orthogonal line
+        reward = 0.0
+        # print(f"{relative_waypoints[self.current_waypoint][0]}")
+        if (waypoint_distances[1] < waypoint_distances[0]):
+            r_path = np.exp(-3 * np.square(normalized_obs[4]))
+            r_drift = 1 / (1 + np.power(np.abs((np.abs(beta) - 0.87) / 0.26), 3))
 
-        reward = 0.05 * r_path + 0.95 * r_drift
+            self.current_waypoint = self.next_waypoints[1]
+            # print(f"{self.current_waypoint = }")
+            reward = 0.05 * r_path + 0.95 * r_drift
 
         return normalized_obs, reward, done, truncated, info
 
-    def compute_local_waypoints(self, current_position: np.ndarray, yaw: float):
-        R = Rotation.from_euler("Z", yaw).as_matrix()
-        t = np.pad(current_position, (0, 1))
-        T = se3.from_rotation_translation(R, t)
 
-        self.T = T
-
-        relative_waypoints = se3.transform_points(se3.inverse(T), self.waypoints)
-        waypoint_distances = np.linalg.norm(relative_waypoints, axis=1)
-        closest_waypoint_index = np.argmin(waypoint_distances)
-        if relative_waypoints[closest_waypoint_index][0] < 0:
-            closest_waypoint_index = (closest_waypoint_index + 1) % self.waypoints.shape[0]
-        waypoints_shifted = np.roll(relative_waypoints, -closest_waypoint_index + 1, axis=0)
-
-        self.signed_distance_to_path = signed_orthogonal_distance_to_line(waypoints_shifted[0], waypoints_shifted[1], np.zeros(2))
-        self.current_waypoint = waypoints_shifted[0]
-        self.next_waypoints = waypoints_shifted[1:6]
+    def compute_relative_waypoints(self, current_position: Optional[np.ndarray] = None, yaw: Optional[float] = None):
+        if current_position is not None and yaw is not None:
+            R = Rotation.from_euler("Z", yaw).as_matrix()
+            t = np.pad(current_position, (0, 1))
+            self.previous_T = self.T
+            self.T = se3.from_rotation_translation(R, t)
+        return se3.transform_points(se3.inverse(self.T), self.waypoints)
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed, options=options)
 
         action = np.array([0, -0.6])
         obs, _, _, _, info = self.step(action)
+
+        relative_waypoints = self.compute_relative_waypoints()
+        waypoint_distances = np.linalg.norm(relative_waypoints, axis=1)
+        self.closest_waypoint = np.argmin(waypoint_distances)
+        if relative_waypoints[self.closest_waypoint][0] <= 0.0:
+            self.closest_waypoint = (self.closest_waypoint + self.skip) % self.waypoints.shape[0]
+        self.next_waypoints = np.mod(np.arange(self.current_waypoint, self.current_waypoint + 5 * self.skip, self.skip, dtype=int), self.waypoints.shape[0])
         return obs, info
 
     def render_velocities(self, renderer: EnvRenderer):
@@ -154,14 +168,15 @@ class DeepDriftingEnv(gym.Wrapper):
         renderer.render_lines(np.vstack([current_position, current_position + vy]), color=(0, 255, 0))
 
     def render_distance_to_path(self, renderer: EnvRenderer):
-        n = np.flip(se3.transform_points(self.T, np.pad(self.next_waypoints[0] - self.current_waypoint, (0, 2)))[:2]) * [-1, 1]
+        previous_waypoint = self.waypoints[self.current_waypoint - 1]
+        current_waypoint = self.waypoints[self.current_waypoint]
+        n = np.flip(current_waypoint - previous_waypoint) * [-1, 1]
         n /= np.linalg.norm(n)
         current_position = self.T[:2, 3]
         renderer.render_lines(np.vstack([current_position, current_position - n * self.signed_distance_to_path]), color=(0, 255, 0))
 
-    def render_local_waypoints(self, renderer: EnvRenderer):
-        abs_waypoints = se3.transform_points(self.T, self.next_waypoints)
-        renderer.render_closed_lines(abs_waypoints, color=(255, 0, 0), size=2)
+    def render_next_waypoints(self, renderer: EnvRenderer):
+        renderer.render_closed_lines(self.waypoints[self.next_waypoints], color=(255, 0, 0), size=2)
 
 
 if __name__ == "__main__":
@@ -175,7 +190,10 @@ if __name__ == "__main__":
             "params": {
                 "mu": 0.4
             },
-            "map": "Spielberg",
+            "reset_config": {
+                "type": "cl_grid_static"
+            },
+            "map": "Hockenheim",
          },
          render_mode="human"
     )
@@ -187,12 +205,11 @@ if __name__ == "__main__":
     print(env.observation_space)
 
     obs, info = env.reset()
-    print(obs)
     env.render()
     done = False
     while not done:
         action = env.action_space.sample()
-        # action = np.array([0.0, 0.0])
+        # action = np.array([0.0, 0.6])
         obs, step_reward, done, truncated, info = env.step(action)
-        print(obs, step_reward)
+        # print(obs, step_reward)
         frame = env.render()
