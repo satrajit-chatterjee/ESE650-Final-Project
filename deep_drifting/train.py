@@ -18,7 +18,7 @@ from deep_drifting.schedulers import linear_schedule
 
 from f1tenth_gym.envs import F110Env
 
-def eval_wrap_env(env_config: EnvConfig, render_mode: Optional[str] = None, max_episode_steps: Optional[int] = 50000):
+def eval_wrap_env(env_config: EnvConfig, render_mode: Optional[str] = None, max_episode_steps: Optional[int] = 100000):
     env : F110Env = gym.make(
         "f1tenth_gym:f1tenth-v0",
          config = {
@@ -35,9 +35,9 @@ def eval_wrap_env(env_config: EnvConfig, render_mode: Optional[str] = None, max_
             "map": env_config.map
          },
          render_mode=render_mode,
-         max_episode_steps=max_episode_steps
     )
     env = DeepDriftingEnv(env, **asdict(env_config))
+    env = TimeLimit(env, max_episode_steps=max_episode_steps)
     return env
 
 if __name__ == "__main__":
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     eval_env = make_vec_env(eval_wrap_env, n_envs=args.num_envs, seed=42, env_kwargs={"env_config": env_config})
 
     eval_callback = EvalCallback(
-        train_env, best_model_save_path=f"models/{run.id}",
+        eval_env, best_model_save_path=f"models/{run.id}",
         log_path="./logs/", eval_freq=10000,
         deterministic=True, render=False
     )

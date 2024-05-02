@@ -24,7 +24,7 @@ class EnvConfig():
             refline = np.loadtxt(self.refline, delimiter=",")
             if refline.shape[1] == 2:
                 refline = np.column_stack([refline, np.ones(refline.shape[0])])
-        self.map = Track.from_refline(*refline.T)
+            self.map = Track.from_refline(*refline.T)
 
 @dataclass
 class ModelConfig():
