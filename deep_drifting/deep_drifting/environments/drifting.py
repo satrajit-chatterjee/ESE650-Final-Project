@@ -43,8 +43,23 @@ def interpolate(x: np.ndarray, input_range: np.ndarray, output_range: np.ndarray
 class DeepDriftingEnv(gym.Wrapper):
     env : F110Env
     
-    def __init__(self, env: F110Env):
+    def __init__(
+        self,
+        env: F110Env, 
+        l_path: float = 0.3, l_drift: float = 0.7,
+        l_vx: float = 0.0, l_vy: float = 0.0,
+        skip: int = 3,
+        max_dist_from_path: float = 5.0,
+        **kwargs
+    ):
         super().__init__(env)
+
+        self.l_path = l_path
+        self.l_drift = l_drift
+        self.l_vx = l_vx
+        self.l_vy = l_vy
+        self.skip = skip
+        self.max_dist_from_path = max_dist_from_path
 
         if env.render_mode is not None:
             env.unwrapped.add_render_callback(env.unwrapped.track.centerline.render_waypoints)
@@ -69,9 +84,6 @@ class DeepDriftingEnv(gym.Wrapper):
         xs = self.env.unwrapped.track.centerline.xs
         ys = self.env.unwrapped.track.centerline.ys
         self.waypoints = np.column_stack([xs, ys])
-        self.skip = 5
-
-        self.max_dist_from_path = 5.0
         
         self.T = np.eye(4)
         self.signed_distance_to_path: float = 0
@@ -124,19 +136,19 @@ class DeepDriftingEnv(gym.Wrapper):
         if (np.abs(self.signed_distance_to_path) > self.max_dist_from_path):
             done = True
 
-        # TODO(rahul): project onto waypoint orthogonal line
-        # r_wp = 1 / (waypoint_distances[1] + 1e-3)
-        # print(self.current_waypoint)
-        reward = float(self.current_waypoint) / self.waypoints.shape[0]
-        # print(f"{relative_waypoints[self.current_waypoint][0]}")
+        reward = 0
         if (waypoint_distances[1] < waypoint_distances[0]):
             r_path = np.exp(-3 * np.square(normalized_obs[4]))
             r_drift = 1 / (1 + np.power(np.abs((np.abs(beta) - 0.87) / 0.26), 3))
+            r_vx = np.maximum(normalized_obs[0], 0)
+            r_vy = np.maximum(normalized_obs[1], 0)
+
+            reward += self.l_path * r_path
+            reward += self.l_drift * r_drift
+            reward += self.l_vx * r_vx
+            reward += self.l_vy * r_vy
 
             self.current_waypoint = self.next_waypoints[1]
-            # print(f"{self.current_waypoint = }")
-            # reward = 0.3 * r_path + 0.7 * r_drift
-            reward += 1.0 * r_path + 0.0 * r_drift
 
         return normalized_obs, reward, done, truncated, info
 
@@ -163,9 +175,9 @@ class DeepDriftingEnv(gym.Wrapper):
 
         relative_waypoints = self.compute_relative_waypoints()
         waypoint_distances = np.linalg.norm(relative_waypoints, axis=1)
-        self.closest_waypoint = np.argmin(waypoint_distances)
-        if relative_waypoints[self.closest_waypoint][0] <= 0.0:
-            self.closest_waypoint = (self.closest_waypoint + self.skip) % self.waypoints.shape[0]
+        self.current_waypoint = np.argmin(waypoint_distances)
+        if relative_waypoints[self.current_waypoint][0] <= 0.0:
+            self.current_waypoint = (self.current_waypoint + self.skip) % self.waypoints.shape[0]
         # print(f"RESET: {self.current_waypoint}")
         self.next_waypoints = np.mod(np.arange(self.current_waypoint, self.current_waypoint + 5 * self.skip, self.skip, dtype=int), self.waypoints.shape[0])
         return obs, info
