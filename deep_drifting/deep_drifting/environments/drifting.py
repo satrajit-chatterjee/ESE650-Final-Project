@@ -125,7 +125,9 @@ class DeepDriftingEnv(gym.Wrapper):
             done = True
 
         # TODO(rahul): project onto waypoint orthogonal line
-        reward = 0.0
+        # r_wp = 1 / (waypoint_distances[1] + 1e-3)
+        # print(self.current_waypoint)
+        reward = float(self.current_waypoint) / self.waypoints.shape[0]
         # print(f"{relative_waypoints[self.current_waypoint][0]}")
         if (waypoint_distances[1] < waypoint_distances[0]):
             r_path = np.exp(-3 * np.square(normalized_obs[4]))
@@ -133,7 +135,8 @@ class DeepDriftingEnv(gym.Wrapper):
 
             self.current_waypoint = self.next_waypoints[1]
             # print(f"{self.current_waypoint = }")
-            reward = 0.05 * r_path + 0.95 * r_drift
+            # reward = 0.3 * r_path + 0.7 * r_drift
+            reward += 1.0 * r_path + 0.0 * r_drift
 
         return normalized_obs, reward, done, truncated, info
 
@@ -149,6 +152,12 @@ class DeepDriftingEnv(gym.Wrapper):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed, options=options)
 
+
+        self.T = np.eye(4)
+        self.signed_distance_to_path: float = 0
+        self.current_waypoint: int = 0
+        self.next_waypoints: np.ndarray = np.arange(0, 5 * self.skip, self.skip)
+
         action = np.array([0, -0.6])
         obs, _, _, _, info = self.step(action)
 
@@ -157,6 +166,7 @@ class DeepDriftingEnv(gym.Wrapper):
         self.closest_waypoint = np.argmin(waypoint_distances)
         if relative_waypoints[self.closest_waypoint][0] <= 0.0:
             self.closest_waypoint = (self.closest_waypoint + self.skip) % self.waypoints.shape[0]
+        # print(f"RESET: {self.current_waypoint}")
         self.next_waypoints = np.mod(np.arange(self.current_waypoint, self.current_waypoint + 5 * self.skip, self.skip, dtype=int), self.waypoints.shape[0])
         return obs, info
 

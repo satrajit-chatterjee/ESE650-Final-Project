@@ -1,4 +1,4 @@
 -e git+https://github.com/f1tenth/f1tenth_gym.git@5dbba8528db604fe57b39176fb5e6827d2e9fa4b#egg=f1tenth_gym
-stable_baselines3[extra]==2.3.0
+stable_baselines3[extra]==2.3.2
 torch==1.13.1
 wandb

@@ -26,7 +26,7 @@ def wrap_env():
                 "mu": 0.4
             },
             "reset_config": {
-                "type": "cl_grid_random"
+                "type": "cl_grid_static"
             },
             "map": "Hockenheim",
          },
@@ -53,10 +53,14 @@ if __name__ == "__main__":
     model = PPO(
         config["policy_type"],
         vec_env,
+        n_steps=512,
         learning_rate=linear_schedule(0.0003),
-        gamma=0.99,
+        gamma=0.999,
         gae_lambda=0.95,
         verbose=1,
+        policy_kwargs={
+            "net_arch": [128, 128, 128],
+        },
         device="cuda",
         tensorboard_log=f"runs/{run.id}"
     )
