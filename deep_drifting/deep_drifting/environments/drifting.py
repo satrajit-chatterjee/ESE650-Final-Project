@@ -1,5 +1,6 @@
 from dataclasses import asdict
 from typing import Optional
+from pathlib import Path
 
 import gymnasium as gym
 import numpy as np
@@ -87,6 +88,10 @@ class DeepDriftingEnv(gym.Wrapper):
         xs = self.env.unwrapped.track.centerline.xs
         ys = self.env.unwrapped.track.centerline.ys
         self.waypoints = np.column_stack([xs, ys])
+        
+        if self.env.unwrapped.track.filepath is not None:
+            track_filename = Path(self.env.unwrapped.track.filepath).parent / "track.csv"
+            np.savetxt(track_filename, self.waypoints, delimiter=",")
         
         self.T = np.eye(4)
         self.signed_distance_to_path: float = 0

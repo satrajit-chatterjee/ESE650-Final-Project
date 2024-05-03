@@ -7,13 +7,13 @@ controller_node:
     local_frame: ego_racecar/base_link
     global_frame: map
 
-    v_max: 20.0
+    v_max: 12.0
     max_dist_from_path: 2.0
     skip: 8
 
     onnx_model_path: src/deep_drifting/onnx/levine.onnx
     engine_path: src/state_observation/engines/levine.trt
-    waypoints_path: src/deep_drifting/f1tenth_gym/maps/levine/levine_centerline.csv
+    waypoints_path: src/deep_drifting/f1tenth_gym/maps/levine/track.csv
 
-    action_steering_range: [-0.4189, 0.4189]
-    action_velocity_range: [-5.0, 20.0]
+    action_steering_range: [-0.2, 0.2]
+    action_velocity_range: [-3.0, 12.0]

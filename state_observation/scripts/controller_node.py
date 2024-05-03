@@ -100,6 +100,8 @@ class ControllerNode(Node):
             self.config.action_steering_range,
             self.config.action_velocity_range
         ])
+
+        self.prev_time = self.get_clock().now()
     
     def load_waypoints(self) -> np.ndarray:
         """
@@ -164,6 +166,10 @@ class ControllerNode(Node):
         signed_distance_to_path = self.signed_orthogonal_distance_to_line(waypoints_shifted[0], waypoints_shifted[1], np.zeros(2))
         current_waypoint = waypoints_shifted[0]
         next_waypoints = waypoints_shifted[1:1+5*self.config.skip:self.config.skip]
+
+        if self.config.visualize:
+            vis_points(self, "prev_waypoint", current_waypoint, self.config.local_frame, scale=0.2, color=[0.0, 1.0, 0.0, 1.0])
+            vis_points(self, "next_waypoints", next_waypoints, self.config.local_frame, scale=0.2, color=[0.0, 0.0, 1.0, 1.0])
         return current_waypoint, next_waypoints, signed_distance_to_path 
     
     
@@ -188,6 +194,8 @@ class ControllerNode(Node):
         flattened_next_waypoints = next_waypoints.flatten()
 
         state = np.array([vel_x, vel_y, angular_velocity, slip_angle, normed_abs_dist2path, *flattened_next_waypoints], np.float16)
+        # with np.printoptions(precision=4, suppress=True, linewidth=1000):
+        #     print(state)
         normalized_action = self.predict(state)
         self.publish_action(normalized_action)
 
@@ -211,7 +219,6 @@ class ControllerNode(Node):
 
         :param action: np.ndarray of shape (2,) containing the action to take
         """
-        print(normalized_action)
         msg = AckermannDriveStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
         action = interpolate(normalized_action, self.model_action_bounds, self.control_action_bounds)
