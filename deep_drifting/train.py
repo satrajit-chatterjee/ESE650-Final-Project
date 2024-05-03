@@ -70,11 +70,11 @@ if __name__ == "__main__":
         resume=resume
     )
 
-    if args.env_config is not None:
-        wandb.save(args.env_config, policy="now")
-
     if args.timesteps is not None:
         model_config.timesteps = args.timesteps
+
+    if args.env_config is not None:
+        wandb.save(args.env_config, policy="now")
 
     train_env = make_vec_env(wrap_env, n_envs=args.num_envs, seed=42, env_kwargs={"env_config": env_config})
     if Path(f"models/{run.id}").is_dir():
