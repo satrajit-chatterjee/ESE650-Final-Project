@@ -8,6 +8,8 @@ from deep_drifting.environments.drifting import wrap_env
 from f1tenth_gym.envs import F110Env
 from deep_drifting.config import EnvConfig, load_env_config
 
+import numpy as np
+
 import yaml
 
 
@@ -30,8 +32,17 @@ if __name__ == "__main__":
     obs, info = eval_env.reset()
     eval_env.render()
     done = False
+    actions = []
+    observations = []
+    states = []
     while not done:
         action, _ = model.predict(obs)
+        actions.append(action)
         obs, reward, done, truncated, info = eval_env.step(action)
+        observations.append(obs)
         print(reward)
         frame = eval_env.render()
+
+    np.save("actions.npy", np.asarray(actions))
+    np.save("observations.npy", np.asarray(observations))
+    np.save("positions.npy", np.asarray(eval_env.positions))

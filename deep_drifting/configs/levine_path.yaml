@@ -1,0 +1,9 @@
+    l_path: 0.8
+    l_drift: 0.1
+    l_vx: 0.4
+    l_vy: 0.0
+    skip: 8
+    max_dist_from_path: 2.0
+
+    mu: 0.75
+    map: levine
