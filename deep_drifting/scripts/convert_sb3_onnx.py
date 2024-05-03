@@ -18,6 +18,7 @@ def main():
     parser = ArgumentParser()
     parser.add_argument("-m", "--model", type=str, required=True)
     parser.add_argument("-o", "--output", type=str)
+    parser.add_argument("-v" , "--verify", action="store_true", default=False)
 
     args = parser.parse_args()
 
@@ -37,6 +38,22 @@ def main():
         opset_version=17,
         input_names=["input"]
     )
+
+    if args.verify:
+        import onnx
+        import onnxruntime as ort
+        import numpy as np
+
+        onnx_model = onnx.load(args.output)
+        onnx.checker.check_model(onnx_model)
+
+        observation = np.zeros((1, *observation_size)).astype(np.float32)
+        ort_sess = ort.InferenceSession(args.output)
+        actions, values, log_prob = ort_sess.run(None, {"input": observation})
+
+        print(actions, values, log_prob)
+        with torch.no_grad():
+            print(model.policy(torch.as_tensor(observation), deterministic=True))
 
 if __name__ == "__main__":
     main()
