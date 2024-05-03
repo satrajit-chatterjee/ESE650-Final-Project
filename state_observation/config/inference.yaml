@@ -1,10 +1,19 @@
 controller_node:
   ros__parameters:
+
     drive_topic: /drive
     state_obs_topic: /ego_racecar/states
+
     local_frame: ego_racecar/base_link
     global_frame: map
-    v_max: 10.0
-    max_dist_from_path: 5.0
-    
-    
+
+    v_max: 20.0
+    max_dist_from_path: 2.0
+    skip: 8
+
+    onnx_model_path: src/deep_drifting/onnx/levine.onnx
+    engine_path: src/state_observation/engines/levine.trt
+    waypoints_path: src/deep_drifting/f1tenth_gym/maps/levine/levine_centerline.csv
+
+    action_steering_range: [-0.4189, 0.4189]
+    action_velocity_range: [-5.0, 20.0]

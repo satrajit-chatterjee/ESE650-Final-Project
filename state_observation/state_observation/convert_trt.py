@@ -2,7 +2,7 @@ from pathlib import Path
 import os
 
 import tensorrt as trt
-import common
+from state_observation import common
 
 TRT_LOGGER = trt.Logger()
 

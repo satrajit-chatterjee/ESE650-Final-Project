@@ -27,8 +27,8 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install entry points
 install(PROGRAMS
-  state_observation/state_observation_node.py
-  state_observation/controller_node.py
+  scripts/state_publisher_node.py
+  scripts/controller_node.py
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
