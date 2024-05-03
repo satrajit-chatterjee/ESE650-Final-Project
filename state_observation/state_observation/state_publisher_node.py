@@ -13,12 +13,14 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import Float64
 from ackermann_msgs.msg import AckermannDriveStamped
 from utilities.params import register_config
-from utilities import se3
 
 ROOT = str(Path(os.getcwd()))
 
 @dataclass
 class StateObservationConfig():
+    """
+    Dataclass containing the configuration parameters for the state observation node
+    """
     odom_topic: str = '/ego_racecar/odom'
     lidar_topic: str = '/scan'
     drive_topic: str = '/drive'
@@ -32,7 +34,10 @@ class StateObservationConfig():
     wheelbase: float = 0.25  # meters
 
 class StateObservation(Node):
-    def __init__(self):
+    def __init__(self) -> None:
+        """
+        Initialize the state observation node
+        """
         super().__init__('state_publisher_node')
 
         self.config = register_config(self, StateObservationConfig())
@@ -46,14 +51,30 @@ class StateObservation(Node):
         self.erpm = 0.0
         self.steering_angle = 0.0
 
-    def drive_callback(self, msg):
+    def drive_callback(self, msg: AckermannDriveStamped) -> None:
+        """
+        Callback function for the drive commands
+
+        :param msg: AckermannDriveStamped message containing the drive commands
+        """
         self.steering_angle = msg.drive.steering_angle
 
-    def erpm_callback(self, msg):
+    def erpm_callback(self, msg: Float64) -> None:
+        """
+        Callback function for the erpm
+
+        :param msg: Float64 message containing the erpm
+        """
         self.erpm = msg.data
 
 
-    def pose_callback(self, msg):
+    def pose_callback(self, msg: Odometry) -> None:
+        """
+        Callback function for the pose of the car. 
+        This function computes the state estimates and publishes them
+
+        :param msg: Odometry message containing the pose of the car
+        """
         # Get the pose of the car in the map frame
         new_x = msg.pose.pose.position.x
         new_y = msg.pose.pose.position.y

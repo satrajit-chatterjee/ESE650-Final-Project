@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.5)
 project(state_observation)
 
 # Find dependencies
-# Find dependencies
 foreach(PACKAGE 
   ament_cmake 
   ament_cmake_python
@@ -29,6 +28,7 @@ ament_python_install_package(${PROJECT_NAME})
 # Install entry points
 install(PROGRAMS
   state_observation/state_observation_node.py
+  state_observation/controller_node.py
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
