@@ -4,16 +4,16 @@ controller_node:
     drive_topic: /drive
     state_obs_topic: /ego_racecar/states
 
-    local_frame: ego_racecar/base_link
+    local_frame: laser
     global_frame: map
 
-    v_max: 12.0
+    v_max: 8.0
     max_dist_from_path: 2.0
     skip: 8
 
     onnx_model_path: src/deep_drifting/onnx/levine.onnx
     engine_path: src/state_observation/engines/levine.trt
-    waypoints_path: src/deep_drifting/f1tenth_gym/maps/levine/track.csv
+    waypoints_path: src/deep_drifting/maps/levine/track.csv
 
-    action_steering_range: [-0.2, 0.2]
-    action_velocity_range: [-3.0, 12.0]
+    action_steering_range: [-0.3, 0.3]
+    action_velocity_range: [1.0, 2.0]
