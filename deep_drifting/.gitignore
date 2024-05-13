@@ -1,0 +1,20 @@
+# Environment
+.envrc
+
+# Local Development
+f1tenth_gym
+
+# Python
+__pycache__
+*.egg-info/
+
+# Training
+runs/
+wandb/
+models/
+logs/
+saved_models/
+
+# Cluster
+slurm*
+data/

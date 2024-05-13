@@ -6,3 +6,4 @@ state_publisher_node:
     state_obs_topic: /ego_racecar/states
     local_frame: ego_racecar/base_link
     global_frame: map
+    wheelbase: 0.25

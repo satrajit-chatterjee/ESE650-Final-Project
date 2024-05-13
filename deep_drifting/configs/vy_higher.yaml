@@ -1,0 +1,6 @@
+l_path: 0.05
+l_drift: 0.70
+l_vx: 0.0
+l_vy: 0.25
+skip: 10
+max_dist_from_path: 5.0

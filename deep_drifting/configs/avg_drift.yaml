@@ -1,0 +1,8 @@
+l_path: 0.2
+l_drift: 0.8
+l_vx: 0.0
+l_vy: 0.0
+skip: 10
+max_dist_from_path: 5.0
+
+map: Hockenheim
